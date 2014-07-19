@@ -6,8 +6,19 @@ open System.Net.Sockets
 open Microsoft.FSharp.Control
 
 
- 
-type Client = MailboxProcessor<string> * MailboxProcessor<string>
+
+type Client =
+    abstract Read : unit -> option<string>
+    abstract Write : string -> unit
+
+type private ReadWriteMailbox = MailboxProcessor<string> * MailboxProcessor<string>
+
+type private InternalClient(mbox : ReadWriteMailbox) =
+    interface Client with
+        member this.Read() = (fst mbox).TryReceive(0) |> Async.RunSynchronously
+        member this.Write(msg) = (snd mbox).Post(msg)
+    
+
 
 
 
@@ -29,7 +40,7 @@ let private read_work (client:TcpClient, inbox:MailboxProcessor<string>) =
     client.Close |> ignore
 
  
-let private server = new MailboxProcessor<Client>(fun server_inbox -> async {
+let private server = new MailboxProcessor<ReadWriteMailbox>(fun server_inbox -> async {
     let socket = new TcpListener(IPAddress.Loopback, 12321)
     do socket.Start()
     while true do
@@ -51,6 +62,6 @@ let getNewClientList () =
     let rec iter () =
         match server.TryReceive(0) |> Async.RunSynchronously with
         | None -> []
-        | Some client -> client :: iter ()
-    iter()
+        | Some client -> (InternalClient(client) :> Client) :: iter ()
+    iter ()
 

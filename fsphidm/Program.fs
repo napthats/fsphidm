@@ -11,7 +11,7 @@ let main _ =
         Async.Sleep(1000) |> Async.RunSynchronously
         List.map (fun client -> client_List.Add(client)) (getNewClientList()) |> ignore
         for client in client_List do
-            match (fst client).TryReceive(0) |> Async.RunSynchronously with
+            match client.Read() with
             | None -> ()
-            | Some msg -> for receiver_client in client_List do (snd receiver_client).Post(msg)
+            | Some msg -> for receiver_client in client_List do receiver_client.Write(msg)
     0
