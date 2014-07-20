@@ -6,7 +6,6 @@ open System.Net.Sockets
 open Microsoft.FSharp.Control
 
 
-
 type Client =
     abstract Read : unit -> option<string>
     abstract Write : string -> unit
@@ -28,9 +27,9 @@ type private InternalClient(mbox : ReadWriteMailbox) =
     interface Client with
         member this.Read() =
             match (fst mbox).TryReceive(0) |> Async.RunSynchronously with
-                | Some(Read(msg)) -> Some(msg)
-                | Some(Closed) -> is_connected <- false; None
-                | None -> None
+            | Some(Read(msg)) -> Some(msg)
+            | Some(Closed) -> is_connected <- false; None
+            | None -> None
         member this.Write(msg) = (snd mbox).Post(Write(msg))
         member this.Disconnect() = (snd mbox).Post(Close)
         member this.isConnected = is_connected

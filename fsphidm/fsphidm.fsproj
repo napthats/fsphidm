@@ -52,6 +52,7 @@
   <ItemGroup>
     <None Include="App.config" />
     <Compile Include="Server.fs" />
+    <Compile Include="PhiClient.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
   <PropertyGroup>
