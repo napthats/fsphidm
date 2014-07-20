@@ -13,7 +13,7 @@ type Direction =
 
 type ClientProtocol =
     | Say of string
-    | Go of Direction
+    | Go of (Direction * bool) //bool is for a withTurn flag
 
 type ServerProtocol =
     | RawMessage of string
@@ -24,9 +24,16 @@ type PhiClient =
     abstract Disconnect : unit -> unit
     abstract isConnected : bool
 
-let private parse_direction dir =
-    match dir with
+let private parse_direction (dir_string : string) =
+    match dir_string.ToLower() with
     | "f" -> Some(RelativeDirection(F))
+    | "r" -> Some(RelativeDirection(R))
+    | "b" -> Some(RelativeDirection(B))
+    | "l" -> Some(RelativeDirection(L))
+    | "n" -> Some(AbstractDirection(N))
+    | "e" -> Some(AbstractDirection(E))
+    | "s" -> Some(AbstractDirection(S))
+    | "w" -> Some(AbstractDirection(W))
     | _ -> None
 
 type private InternalPhiClient(client : Client) =
@@ -37,7 +44,7 @@ type private InternalPhiClient(client : Client) =
                 match Array.toList(msg.Split()) with
                 | ["go"; dir_string] ->
                     match parse_direction(dir_string) with
-                    | Some(dir) -> Some(Go(dir))
+                    | Some(dir) -> Some(Go(dir, dir_string.ToUpper() = dir_string))
                     | None -> None //TODO: send error messages to the client.
                 | _ -> Some(Say(msg))
             | None -> None

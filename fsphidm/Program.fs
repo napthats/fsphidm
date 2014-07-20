@@ -26,7 +26,8 @@ let main _ =
                     receiver_client.Write(
                         match msg with
                         | Say(say_msg) -> RawMessage(say_msg)
-                        | Go(_) -> RawMessage("go somewhere")
+                        | Go(_, true) -> RawMessage("go somewhere with turn")
+                        | Go(_, false) -> RawMessage("go somewhere")
                     )
         phiclient_List.RemoveAll(fun phiclient -> remove_client_List.Contains(phiclient)) |> ignore
     0
