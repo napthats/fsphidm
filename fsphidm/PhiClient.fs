@@ -1,15 +1,10 @@
 ﻿module PhiClient
 
 open Server
+open PhiMap
 
 
-type ADType = | N | E | S | W
 
-type RDType = | F | R | B | L
-
-type Direction =
-    | AbstractDirection of ADType
-    | RelativeDirection of RDType
 
 type ClientProtocol =
     | Say of string
@@ -55,4 +50,4 @@ type private InternalPhiClient(client : Client) =
         member this.Disconnect() = client.Disconnect()
         member this.isConnected = client.isConnected
         
-let createPhiClient(cl) = (new InternalPhiClient(cl)) :> PhiClient
+let createPhiClient(client) = (new InternalPhiClient(client)) :> PhiClient
