@@ -7,6 +7,8 @@ open System.Collections.Generic
 
 [<EntryPoint>]
 let main _ =
+    //for test
+    //printf "%s" <| PhiMap.get_sight_string(PhiMap.get_default_position (), PhiMap.E, 5)
     let phiclient_List = new List<PhiClient>();
     while true do
         Async.Sleep(100) |> Async.RunSynchronously
