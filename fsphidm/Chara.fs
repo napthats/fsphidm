@@ -18,18 +18,22 @@ type Chara(first_pos, first_adir) as this = // (first_pos: Position, first_dir: 
     let mutable adir = first_adir
     do Chara.appear this pos
 
-    static let internal_position_dic = new Dictionary<Position, List<Chara>>()
-    static member position_dic = internal_position_dic
+    static let position_dic = new Dictionary<Position, List<Chara>>()
+    //static let internal_position_dic = new Dictionary<Position, List<Chara>>()
+    //static member position_dic = internal_position_dic
+    //[<DefaultValue>] static val mutable private position_dic : Dictionary<Position, List<Chara>>
+    //static do Chara.position_dic <- new Dictionary<Position, List<Chara>>()
+
     //need to hide
     static member private _add_to_position chara pos=
-        if Chara.position_dic.ContainsKey(pos)
-        then Chara.position_dic.[pos].Add(chara)
-        else Chara.position_dic.Add(pos, new List<Chara>()); Chara.position_dic.[pos].Add(chara)
+        if position_dic.ContainsKey(pos)
+        then position_dic.[pos].Add(chara)
+        else position_dic.Add(pos, new List<Chara>()); position_dic.[pos].Add(chara)
     //need to hide
     //position_dic must contain chara at pos
     static member private _remove_from_position chara pos=
-        if Chara.position_dic.ContainsKey(pos)
-        then if Chara.position_dic.[pos].Remove(chara)
+        if position_dic.ContainsKey(pos)
+        then if position_dic.[pos].Remove(chara)
              then ()
              else assert(false) //chara doesn't exist at pos
         else assert(false) //no one exists at pos
