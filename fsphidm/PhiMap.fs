@@ -3,13 +3,13 @@
 open System.Collections.Generic
 
 
-type ADType = | N | E | S | W
+type AbsoluteDirection = | N | E | S | W
 
-type RDType = | F | R | B | L
+type RelativeDirection = | F | R | B | L
 
 type Direction =
-    | AbstractDirection of ADType
-    | RelativeDirection of RDType
+    | AD of AbsoluteDirection
+    | RD of RelativeDirection
 
 //Map chip appearance
 type MapChipType =
@@ -37,6 +37,34 @@ type MapChipType =
 type Position = private Pos of int * int
 
 let get_default_position () = Pos(1,1)
+
+let get_next_position pos current_adir dir =
+    let adir_to_next_pos adir =
+        match pos with
+        | Pos(x,y) ->
+          match adir with
+          | N -> Pos(x,y-1)
+          | E -> Pos(x+1,y)
+          | S -> Pos(x,y+1)
+          | W -> Pos(x-1,y)
+    in
+    match dir with
+    | AD(adir) -> adir_to_next_pos adir
+    | RD(rdir) ->
+      match (current_adir, rdir) with
+      | (d, F) -> adir_to_next_pos d
+      | (N, R) -> adir_to_next_pos E
+      | (E, R) -> adir_to_next_pos S
+      | (S, R) -> adir_to_next_pos W
+      | (W, R) -> adir_to_next_pos N
+      | (N, B) -> adir_to_next_pos S
+      | (E, B) -> adir_to_next_pos W
+      | (S, B) -> adir_to_next_pos N
+      | (W, B) -> adir_to_next_pos E
+      | (N, L) -> adir_to_next_pos W
+      | (E, L) -> adir_to_next_pos N
+      | (S, L) -> adir_to_next_pos E
+      | (W, L) -> adir_to_next_pos S
 
 type private MapChip = {mutable look: MapChipType}
 let private MAP_CHIP_OUTER = {look = Unknown}
@@ -109,7 +137,37 @@ let private mapchip_to_string chip =
 //tentative
 let get_sight_string (pos, adir, size) =
     (List.reduce
-      (fun a b -> a + "\n" + b)
+      (fun a b -> a + "\n\r" + b)
       (List.map
         (List.reduce (fun a b -> a + b))
-        (List.map (List.map (fun c -> mapchip_to_string c.look)) (get_sight (pos, adir, size))))) + "\n"
+        (List.map (List.map (fun c -> mapchip_to_string c.look)) (get_sight (pos, adir, size))))) + "\n\r"
+
+type EnterType =
+    | ETWalk
+
+let can_enter pos (_:EnterType) =
+    match pos with
+    | Pos(x,y) ->
+      match (get_map_chip (x,y)).look with
+      | Space
+      | PPlate
+      | Plant
+      | Flower
+      | Water
+      | Box
+      | Mist
+      | TGate
+      | Store
+      | Gate -> true
+      | Jail
+      | LBox
+      | Window
+      | Tree
+      | Glass
+      | MWall
+      | LGate
+      | Wall
+      | Rock
+      | Unknown -> false
+      
+      
