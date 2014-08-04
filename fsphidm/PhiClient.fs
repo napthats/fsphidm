@@ -4,11 +4,10 @@ open Server
 open PhiMap
 
 
-
-
 type ClientProtocol =
-    | Say of string
-    | Go of (Direction * bool) //bool is for a withTurn flag
+    | CPSay of string
+    | CPGo of (Direction * bool) //bool is for a withTurn flag
+    | CPTurn of Direction
 
 type ServerProtocol =
     | RawMessage of string
@@ -20,7 +19,7 @@ type PhiClient =
     abstract isConnected : bool
 
 let private parse_direction (dir_string : string) =
-    match dir_string.ToLower() with
+    match dir_string with
     | "f" -> Some(RD(F))
     | "r" -> Some(RD(R))
     | "b" -> Some(RD(B))
@@ -37,11 +36,16 @@ type private InternalPhiClient(client : Client) =
             match client.Read() with
             | Some(msg) ->
                 match Array.toList(msg.Split()) with
+                //TODO: handle just "go" for "go f"
                 | ["go"; dir_string] ->
-                    match parse_direction(dir_string) with
-                    | Some(dir) -> Some(Go(dir, dir_string.ToUpper() = dir_string))
+                    match parse_direction(dir_string.ToLower()) with
+                    | Some(dir) -> Some(CPGo(dir, dir_string.ToUpper() = dir_string))
                     | None -> None //TODO: send error messages to the client.
-                | _ -> Some(Say(msg))
+                | ["turn"; dir_string] ->
+                    match parse_direction(dir_string) with
+                    | Some(dir) -> Some(CPTurn(dir))
+                    | None -> None //TODO: send error messages to the client.
+                | _ -> Some(CPSay(msg))
             | None -> None
         member this.Write(sp: ServerProtocol) = 
             match sp with

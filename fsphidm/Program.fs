@@ -37,6 +37,7 @@ let main _ =
                 //| None -> if (rnd.Next(2) = 0) then (client.Disconnect()) //tentative
                 | Some(Say(say_msg)) ->
                     for receiver_pc in pc_List do receiver_pc.Send(RawMessage(say_msg))
-                | Some(Go(dir,_)) -> (pc :> Chara).Walk(dir)
+                | Some(Go(dir,with_turn)) -> (pc :> Chara).Walk(dir, with_turn)
+                | Some(Turn(dir)) -> (pc :> Chara).Turn(dir)
         pc_List.RemoveAll(fun phiclient -> remove_pc_List.Contains(phiclient)) |> ignore
     0

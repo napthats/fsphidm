@@ -8,9 +8,11 @@ open PhiClient
 type CharaAction =
     | Say of string
     | Go of (Direction * bool) //bool is for a withTurn flag
+    | Turn of Direction
 
 type InformType =
     | SightChange of string //tentative: should not be string
+    | CannotGo
 
 [<AbstractClass>]
 type Chara(first_pos, first_adir) as this = // (first_pos: Position, first_dir: ADType) = 
@@ -46,10 +48,18 @@ type Chara(first_pos, first_adir) as this = // (first_pos: Position, first_dir: 
     abstract CanEnter : Position -> bool
     abstract Inform : InformType -> unit
 
-    member this.Walk walk_dir =
+    member this.Walk(walk_dir,with_turn) =
+        let new_adir =
+            if with_turn
+            then match walk_dir with
+                 | AD(ad) -> ad
+                 | RD(rd) -> make_adir_from_rdir adir rd
+            else adir
         let next_pos = get_next_position pos adir walk_dir in
         if this.CanEnter(next_pos)
-        then Chara.move this pos next_pos; pos <- next_pos; this.Inform(SightChange(get_sight_string (pos, adir, 5)))
-        else () //tentative: should inform
+        then Chara.move this pos next_pos; pos <- next_pos; adir <- new_adir; this.Inform(SightChange(get_sight_string (pos, adir, 5)))
+        else this.Inform(CannotGo); if with_turn then adir <- new_adir; this.Inform(SightChange(get_sight_string (pos, adir, 5)))
+    member this.Turn(turn_dir) =
+        adir <- match turn_dir with | AD(ad) -> ad | RD(rd) -> make_adir_from_rdir adir rd
+        this.Inform(SightChange(get_sight_string (pos, adir, 5)))
     //abstract Say : string -> unit    
-    

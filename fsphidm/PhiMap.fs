@@ -38,6 +38,22 @@ type Position = private Pos of int * int
 
 let get_default_position () = Pos(1,1)
 
+let make_adir_from_rdir adir rdir =
+    match (adir, rdir) with
+    | (d, F) -> d
+    | (N, R) -> E
+    | (E, R) -> S
+    | (S, R) -> W
+    | (W, R) -> N
+    | (N, B) -> S
+    | (E, B) -> W
+    | (S, B) -> N
+    | (W, B) -> E
+    | (N, L) -> W
+    | (E, L) -> N
+    | (S, L) -> E
+    | (W, L) -> S
+
 let get_next_position pos current_adir dir =
     let adir_to_next_pos adir =
         match pos with
@@ -50,21 +66,7 @@ let get_next_position pos current_adir dir =
     in
     match dir with
     | AD(adir) -> adir_to_next_pos adir
-    | RD(rdir) ->
-      match (current_adir, rdir) with
-      | (d, F) -> adir_to_next_pos d
-      | (N, R) -> adir_to_next_pos E
-      | (E, R) -> adir_to_next_pos S
-      | (S, R) -> adir_to_next_pos W
-      | (W, R) -> adir_to_next_pos N
-      | (N, B) -> adir_to_next_pos S
-      | (E, B) -> adir_to_next_pos W
-      | (S, B) -> adir_to_next_pos N
-      | (W, B) -> adir_to_next_pos E
-      | (N, L) -> adir_to_next_pos W
-      | (E, L) -> adir_to_next_pos N
-      | (S, L) -> adir_to_next_pos E
-      | (W, L) -> adir_to_next_pos S
+    | RD(rdir) -> adir_to_next_pos (make_adir_from_rdir current_adir rdir)
 
 type private MapChip = {mutable look: MapChipType}
 let private MAP_CHIP_OUTER = {look = Unknown}
