@@ -2,22 +2,15 @@
 
 open System.Collections.Generic
 open PhiMap
-open PhiClient
 
+let private SIGHT_SIZE = 7 //tentative
 
-type CharaAction =
-    | Say of string
-    | Go of (Direction * bool) //bool is for a withTurn flag
-    | Turn of Direction
-
-type InformType =
-    | SightChange of string //tentative: should not be string
-    | CannotGo
 
 [<AbstractClass>]
 type Chara(first_pos, first_adir) as this = // (first_pos: Position, first_dir: ADType) = 
     let mutable pos = first_pos
     let mutable adir = first_adir
+    let name = "pc" //tentative
     do Chara.appear this pos
 
     static let position_dic = new Dictionary<Position, List<Chara>>()
@@ -25,6 +18,7 @@ type Chara(first_pos, first_adir) as this = // (first_pos: Position, first_dir: 
     //static member position_dic = internal_position_dic
     //[<DefaultValue>] static val mutable private position_dic : Dictionary<Position, List<Chara>>
     //static do Chara.position_dic <- new Dictionary<Position, List<Chara>>()
+
 
     //need to hide
     static member private _add_to_position chara pos=
@@ -43,11 +37,37 @@ type Chara(first_pos, first_adir) as this = // (first_pos: Position, first_dir: 
     static member private appear chara new_pos = Chara._add_to_position chara new_pos
     static member private disappear chara old_pos = Chara._remove_from_position chara old_pos
     static member private move chara old_pos new_pos = Chara._remove_from_position chara old_pos; Chara._add_to_position chara new_pos
+    static member private make_sightchange_info pos adir =
+        let sight = get_sight (pos, adir, SIGHT_SIZE) in
+        let chara_in_sight = List<CharaInSight>() in
+        let sight_wo_pos = List.map (List.map snd) sight in
+        List.mapi
+            (fun _y line -> 
+                List.mapi
+                    (fun _x (maybe_pos, _) ->
+                        match maybe_pos with
+                        | Some(pos) ->
+                          if position_dic.ContainsKey(pos)
+                          then
+                              List.map
+                                  (fun (_chara : Chara) ->chara_in_sight.Add({x = _x; y = _y; dir = make_rdir_from_adir adir (_chara.GetDirection()); chara = _chara}))
+                                  (List.ofSeq(position_dic.[pos]))
+                              |> ignore
+                          else ()
+                        | None -> ()
+                    )
+                    line
+            )
+            sight
+        |> ignore
+        (sight_wo_pos, List.ofSeq(chara_in_sight))
 
     abstract GetAction : unit -> CharaAction option
     abstract CanEnter : Position -> bool
     abstract Inform : InformType -> unit
 
+    member this.GetName() = name
+    member this.GetDirection() = adir
     member this.Walk(walk_dir,with_turn) =
         let new_adir =
             if with_turn
@@ -57,9 +77,33 @@ type Chara(first_pos, first_adir) as this = // (first_pos: Position, first_dir: 
             else adir
         let next_pos = get_next_position pos adir walk_dir in
         if this.CanEnter(next_pos)
-        then Chara.move this pos next_pos; pos <- next_pos; adir <- new_adir; this.Inform(SightChange(get_sight_string (pos, adir, 5)))
-        else this.Inform(CannotGo); if with_turn then adir <- new_adir; this.Inform(SightChange(get_sight_string (pos, adir, 5)))
+        then
+            Chara.move this pos next_pos
+            pos <- next_pos
+            adir <- new_adir
+            this.Inform(SightChange(Chara.make_sightchange_info pos adir))
+        else
+            this.Inform(CannotGo)
+            if with_turn then adir <- new_adir
+            this.Inform(SightChange(Chara.make_sightchange_info pos adir))
     member this.Turn(turn_dir) =
         adir <- match turn_dir with | AD(ad) -> ad | RD(rd) -> make_adir_from_rdir adir rd
-        this.Inform(SightChange(get_sight_string (pos, adir, 5)))
+        this.Inform(SightChange(Chara.make_sightchange_info pos adir))
+        //this.Inform(SightChange(
+          // List.map (List.map snd) (get_sight (pos, adir, SIGHT_SIZE))))
     //abstract Say : string -> unit    
+   
+and CharaAction =
+    | Say of string
+    | Go of (Direction * bool) //bool is for a withTurn flag
+    | Turn of Direction
+
+and [<NoComparison>] CharaInSight = {x : int; y : int; dir : RelativeDirection; chara : Chara}
+
+and [<NoComparison>] InformType =
+    | SightChange of (MapChipType list list * CharaInSight list) //tentative: should not be string
+    | CannotGo
+
+//let chara_walk(walk_dir, with_turn) =
+
+

@@ -38,6 +38,25 @@ type Position = private Pos of int * int
 
 let get_default_position () = Pos(1,1)
 
+let make_rdir_from_adir adir_src adir_dst =
+    match (adir_src, adir_dst) with
+    | (N, N) -> B
+    | (N, E) -> R
+    | (N, S) -> F
+    | (N, W) -> L
+    | (E, N) -> L
+    | (E, E) -> B
+    | (E, S) -> R
+    | (E, W) -> F
+    | (S, N) -> F
+    | (S, E) -> L
+    | (S, S) -> B
+    | (S, W) -> R
+    | (W, N) -> R
+    | (W, E) -> F
+    | (W, S) -> L
+    | (W, W) -> B
+
 let make_adir_from_rdir adir rdir =
     match (adir, rdir) with
     | (d, F) -> d
@@ -82,10 +101,10 @@ let private phi_map =
           [|MWall; MWall; MWall; MWall; MWall|]
         |]
 
-let private get_map_chip (x,y) =
+let private get_pos_and_mapchip (x,y) =
     if (x<0 || x>=phi_map.[0].Length || y<0 || y>= phi_map.Length)
-    then MAP_CHIP_OUTER
-    else phi_map.[y].[x]
+    then (None, MAP_CHIP_OUTER)
+    else (Some(Pos(x,y)), phi_map.[y].[x])
 
 let rec private list_iterate_n elem iter_func n =
     if n = 0
@@ -94,13 +113,13 @@ let rec private list_iterate_n elem iter_func n =
 
 let private get_sub_phigraph ((x,y), adir, size) =
     match adir with
-    | N -> List.map (List.map get_map_chip) (list_iterate_n (list_iterate_n (x,y) (fun (x,y) -> (x+1,y)) size) (List.map (fun (x,y) -> (x,y+1))) size)
-    | E -> List.map (List.map get_map_chip) (list_iterate_n (list_iterate_n (x+size-1,y) (fun (x,y) -> (x,y+1)) size) (List.map (fun (x,y) -> (x-1,y))) size)
-    | S -> List.map (List.map get_map_chip) (list_iterate_n (list_iterate_n (x+size-1,y+size-1) (fun (x,y) -> (x-1,y)) size) (List.map (fun (x,y) -> (x,y-1))) size)
-    | W -> List.map (List.map get_map_chip) (list_iterate_n (list_iterate_n (x,y+size-1) (fun (x,y) -> (x,y-1)) size) (List.map (fun (x,y) -> (x+1,y))) size)
+    | N -> List.map (List.map get_pos_and_mapchip) (list_iterate_n (list_iterate_n (x,y) (fun (x,y) -> (x+1,y)) size) (List.map (fun (x,y) -> (x,y+1))) size)
+    | E -> List.map (List.map get_pos_and_mapchip) (list_iterate_n (list_iterate_n (x+size-1,y) (fun (x,y) -> (x,y+1)) size) (List.map (fun (x,y) -> (x-1,y))) size)
+    | S -> List.map (List.map get_pos_and_mapchip) (list_iterate_n (list_iterate_n (x+size-1,y+size-1) (fun (x,y) -> (x-1,y)) size) (List.map (fun (x,y) -> (x,y-1))) size)
+    | W -> List.map (List.map get_pos_and_mapchip) (list_iterate_n (list_iterate_n (x,y+size-1) (fun (x,y) -> (x,y-1)) size) (List.map (fun (x,y) -> (x+1,y))) size)
 
 //tentative
-let private get_sight (pos, adir, size) =
+let private get_sight_chips (pos, adir, size) =
     match pos with
     | Pos(x,y) ->
       let upper_left =
@@ -112,37 +131,9 @@ let private get_sight (pos, adir, size) =
       in
       get_sub_phigraph (upper_left, adir, size)
 
-//tentative
-let private mapchip_to_string chip =
-    match chip with
-    | Space  -> "  "
-    | PPlate -> "o "
-    | Plant  -> "::"
-    | Flower -> "+:"
-    | Water  -> "__"
-    | Box    -> "xx"
-    | Mist   -> "//"
-    | TGate  -> "><"
-    | Store  -> "ss"
-    | Gate   -> "[]"
-    | Jail   -> "II"
-    | LBox   -> "%%"
-    | Window -> "||"
-    | Tree   -> "TT"
-    | Glass  -> "=="
-    | MWall  -> "HH"
-    | LGate  -> "{}"
-    | Wall   -> "##"
-    | Rock   -> "@@"
-    | Unknown-> "??"
-
-//tentative
-let get_sight_string (pos, adir, size) =
-    (List.reduce
-      (fun a b -> a + "\n\r" + b)
-      (List.map
-        (List.reduce (fun a b -> a + b))
-        (List.map (List.map (fun c -> mapchip_to_string c.look)) (get_sight (pos, adir, size))))) + "\n\r"
+//tenatative
+let get_sight (pos, adir, size) =
+    List.map (List.map (fun (maybe_pos, chip) -> (maybe_pos, chip.look))) (get_sight_chips (pos, adir, size))
 
 type EnterType =
     | ETWalk
@@ -150,7 +141,7 @@ type EnterType =
 let can_enter pos (_:EnterType) =
     match pos with
     | Pos(x,y) ->
-      match (get_map_chip (x,y)).look with
+      match (snd (get_pos_and_mapchip (x,y))).look with
       | Space
       | PPlate
       | Plant

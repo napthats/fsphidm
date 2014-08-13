@@ -21,7 +21,11 @@ let main _ =
         List.map
             (fun client ->
                 let pc = new Pc((createPhiClient(client)),(PhiMap.get_default_position ()),PhiMap.N) in
-                pc.Send(RawMessage("hi"))
+                pc.Send(RawMessage("#name Hii"))
+                pc.Send(RawMessage("#ex-notice land=a"))
+                pc.Send(RawMessage("#ex-notice area=a"))
+                //pc.Send(RawMessage(PhiMap.get_sight_string(PhiMap.get_default_position(), PhiMap.N, 7)))
+                //pc.Send(RawMessage("#m57 ."))
                 pc_List.Add(pc))
             (getNewClientList())
             |> ignore
@@ -35,8 +39,8 @@ let main _ =
                 match (pc :> Chara).GetAction() with
                 | None -> ()
                 //| None -> if (rnd.Next(2) = 0) then (client.Disconnect()) //tentative
-                | Some(Say(say_msg)) ->
-                    for receiver_pc in pc_List do receiver_pc.Send(RawMessage(say_msg))
+                | Some(Say(say_msg)) -> say_msg |> ignore
+                    //tentative //for receiver_pc in pc_List do receiver_pc.Send(RawMessage(say_msg))
                 | Some(Go(dir,with_turn)) -> (pc :> Chara).Walk(dir, with_turn)
                 | Some(Turn(dir)) -> (pc :> Chara).Turn(dir)
         pc_List.RemoveAll(fun phiclient -> remove_pc_List.Contains(phiclient)) |> ignore

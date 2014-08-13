@@ -9,11 +9,13 @@ open Microsoft.FSharp.Control
 type Client =
     abstract Read : unit -> option<string>
     abstract Write : string -> unit
+    abstract WriteByteArray : byte [] -> unit
     abstract Disconnect : unit -> unit
     abstract isConnected : bool
 
 type private WriteProtocol =
     | Write of string
+    | WriteByteArray of byte []
     | Close
 
 type private ReadProtocol =
@@ -31,6 +33,7 @@ type private InternalClient(mbox : ReadWriteMailbox) =
             | Some(Closed) -> is_connected <- false; None
             | None -> None
         member this.Write(msg) = (snd mbox).Post(Write(msg))
+        member this.WriteByteArray(byte_array) = (snd mbox).Post(WriteByteArray(byte_array))
         member this.Disconnect() = (snd mbox).Post(Close)
         member this.isConnected = is_connected
     
@@ -43,6 +46,7 @@ let private write_work (client:TcpClient, inbox:MailboxProcessor<WriteProtocol>)
             match inbox.Receive() |> Async.RunSynchronously with
             | Close -> cont := false
             | Write(msg) -> out.WriteLine(msg)
+            | WriteByteArray(msg) -> stream.Write(msg, 0, msg.Length)
     with
         _ -> ()
     client.Close() //Is it OK to Close twice?

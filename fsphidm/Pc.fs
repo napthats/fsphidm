@@ -18,7 +18,7 @@ type Pc(phi_client : PhiClient, first_pos : Position, first_dir: AbsoluteDirecti
     override this.CanEnter pos = can_enter pos ETWalk
     override this.Inform inform_type =
         match inform_type with
-        | SightChange(sight_string) -> this.Send(RawMessage(sight_string))
+        | SightChange(sight) -> this.Send(M57(sight))
         | CannotGo -> this.Send(RawMessage("Cannot go.")) //tentative message
     //tentative
     member this.Send msg = phi_client.Write msg

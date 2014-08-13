@@ -53,8 +53,8 @@
     <None Include="App.config" />
     <Compile Include="Server.fs" />
     <Compile Include="PhiMap.fs" />
-    <Compile Include="PhiClient.fs" />
     <Compile Include="Chara.fs" />
+    <Compile Include="PhiClient.fs" />
     <Compile Include="Pc.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
