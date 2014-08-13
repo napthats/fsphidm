@@ -94,11 +94,11 @@ let private MAP_CHIP_OUTER = {look = Unknown}
 //phi_map must be recangle
 let private phi_map =
     Array.map (Array.map (fun chip_type -> {look = chip_type}))
-        [|[|MWall; MWall; MWall; MWall; MWall|];
-          [|MWall; Space; Space; Space; MWall|];
-          [|MWall; Space; Tree;  Space; MWall|];
-          [|MWall; Plant; Box;   Plant; MWall|];
-          [|MWall; MWall; MWall; MWall; MWall|]
+        [|[|MWall; MWall; MWall; MWall; MWall; MWall|];
+          [|MWall; Space; Space; Space; Space; MWall|];
+          [|MWall; Space; Tree;  Space; Space; MWall|];
+          [|MWall; Plant; Box;   Plant; Space; MWall|];
+          [|MWall; MWall; MWall; MWall; MWall; MWall|]
         |]
 
 let private get_pos_and_mapchip (x,y) =
@@ -131,8 +131,11 @@ let private get_sight_chips (pos, adir, size) =
       in
       get_sub_phigraph (upper_left, adir, size)
 
+type SightType =
+    | STNormal
+
 //tenatative
-let get_sight (pos, adir, size) =
+let get_sight (pos, adir, size, (_ : SightType)) =
     List.map (List.map (fun (maybe_pos, chip) -> (maybe_pos, chip.look))) (get_sight_chips (pos, adir, size))
 
 type EnterType =

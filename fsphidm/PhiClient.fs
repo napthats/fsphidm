@@ -9,10 +9,12 @@ type ClientProtocol =
     | CPSay of string
     | CPGo of (Direction * bool) //bool is for a withTurn flag
     | CPTurn of Direction
+    | CPLook
+    | CPSharp //tentative
 
 type [<NoComparison>] ServerProtocol =
-    | RawMessage of string
-    | M57 of (MapChipType list list * CharaInSight list)//tentative: it should contains charas and phiobjs
+    | SPRawMessage of string
+    | SPM57 of (MapChipType list list * CharaInSight list)//tentative: it should contains charas and phiobjs
 
 type PhiClient =
     abstract Read : unit -> ClientProtocol option
@@ -79,23 +81,27 @@ type private InternalPhiClient(client : Client) =
         member this.Read() = 
             match client.Read() with
             | Some(msg) ->
-                match Array.toList(msg.Split()) with
-                //TODO: handle just "go" for "go f"
-                | ["go"; dir_string] ->
-                    match parse_direction(dir_string.ToLower()) with
-                    | Some(dir) -> Some(CPGo(dir, dir_string.ToUpper() = dir_string))
-                    | None -> None //TODO: send error messages to the client.
-                | ["go"] -> Some(CPGo(RD(F), false))
-                | ["turn"; dir_string] ->
-                    match parse_direction(dir_string) with
-                    | Some(dir) -> Some(CPTurn(dir))
-                    | None -> None //TODO: send error messages to the client.
-                | _ -> Some(CPSay(msg))
+                if msg.Length = 0
+                then None
+                else if msg.[0] = '#'
+                then Some(CPSharp)
+                else match Array.toList(msg.Split()) with
+                     | ["go"; dir_string] ->
+                         match parse_direction(dir_string.ToLower()) with
+                         | Some(dir) -> Some(CPGo(dir, dir_string.ToUpper() = dir_string))
+                         | None -> None //TODO: send error messages to the client.
+                     | ["go"] -> Some(CPGo(RD(F), false))
+                     | ["turn"; dir_string] ->
+                         match parse_direction(dir_string) with
+                         | Some(dir) -> Some(CPTurn(dir))
+                         | None -> None //TODO: send error messages to the client.
+                     | ["look"] -> Some(CPLook)
+                     | _ -> Some(CPSay(msg))
             | None -> None
         member this.Write(sp: ServerProtocol) = 
             match sp with
-                | RawMessage(msg) -> client.Write(msg)
-                | M57(m57) -> 
+                | SPRawMessage(msg) -> client.Write(msg)
+                | SPM57(m57) -> 
                   let chara_in_sight = snd m57 in
                   client.WriteByteArray(decode_m57_map (fst m57))
                   List.map
